@@ -1,4 +1,4 @@
-# Timestamp Coordinate Mapping Encoder (NDCM)
+# Non-Destructive Coordinate Mapping Encoder (NDCM)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen.svg)
