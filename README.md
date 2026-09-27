@@ -5,7 +5,7 @@
 ![Platform](https://img.shields.io/badge/platform-Browser%20%7C%20Client--Side-orange.svg)
 
 A lightweight, zero-dependency client-side application that implements **Non-Destructive Coordinate Mapping (NDCM)**. This tool maps arbitrary payloads (text, URLs, binary streams) to character positions inside unmodified public host text—such as timestamped YouTube comments—exporting the result as a compact, binary `.key` file.
-
+Try It Out Here: [https://lancemarchetti.github.io/NDCM/](https://lancemarchetti.github.io/NDCM/)
 ---
 
 ## 💡 What is Non-Destructive Coordinate Mapping?
