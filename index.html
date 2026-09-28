@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" author=Narco-Tax>
-    <title>Timestamp Coordinate Mapping Encoder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, author=Narco-Tax">
+    <title>Timestamp Coordinate Mapping Encoder & Decoder</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -51,6 +51,40 @@
             color: var(--accent);
         }
 
+        .tabs {
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            padding: 8px 16px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
         .panel { 
             background: var(--panel); 
             border: 1px solid var(--border); 
@@ -94,7 +128,7 @@
             gap: 10px;
         }
 
-        button { 
+        button.action-btn { 
             flex: 1;
             background: var(--accent); 
             color: #fff; 
@@ -108,7 +142,7 @@
             font-size: 0.9rem;
         }
 
-        button:hover { 
+        button.action-btn:hover { 
             background: var(--accent-hover); 
         }
 
@@ -144,32 +178,86 @@
             font-size: 0.75rem;
             color: var(--text-muted);
         }
+
+        .file-dropzone {
+            border: 2px dashed var(--border);
+            background: #090d16;
+            padding: 24px;
+            border-radius: 6px;
+            text-align: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .file-dropzone:hover {
+            border-color: var(--accent);
+        }
+
+        .output-box {
+            background: #090d16;
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            color: var(--success);
+            word-break: break-all;
+            min-height: 48px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>Timestamp Coordinate Mapping Encoder</h1>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Generates compact binary key files mapped against host comment strings.</p>
+        <h1>Timestamp Coordinate Mapping Utility</h1>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Encode & Extract binary key files mapped against host comment strings.</p>
     </div>
 
-    <!-- Panel 1: Host Text & Character Indexing -->
-    <div class="panel">
-        <h2>1. Host Text String (Base-16 Covered)</h2>
-        <textarea id="commentInput">fav best are covered at: 0:12 2:36 5:44 6:58 7:49</textarea>
-        
-        <label>Base-16 Index Coverage:</label>
-        <div id="hexTable" class="grid-16"></div>
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('encoder')">1. Encode Payload</button>
+        <button class="tab-btn" onclick="switchTab('decoder')">2. Extract Payload</button>
     </div>
 
-    <!-- Panel 2: Target Payload Input & Download Controls -->
-    <div class="panel">
-        <h2>2. Target Payload Input</h2>
-        <input type="text" id="payloadInput" value="" placeholder="Type secret message or URL here...">
-        
-        <div class="btn-group">
-            <button class="btn-download" onclick="downloadBinaryKeyFile()">Download Key (comment.key)</button>
+    <!-- ENCODER TAB -->
+    <div id="encoder" class="tab-content active">
+        <div class="panel">
+            <h2>1. Host Text String (Base-16 Covered)</h2>
+            <textarea id="commentInput">fav best are covered at: 0:12 2:36 5:44 6:58 7:49</textarea>
+            
+            <label>Base-16 Index Coverage:</label>
+            <div id="hexTable" class="grid-16"></div>
+        </div>
+
+        <div class="panel">
+            <h2>2. Target Payload Input</h2>
+            <input type="text" id="payloadInput" value="" placeholder="Type secret message or URL here...">
+            
+            <div class="btn-group">
+                <button class="action-btn btn-download" onclick="downloadBinaryKeyFile()">Download Key (comment.key)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DECODER TAB -->
+    <div id="decoder" class="tab-content">
+        <div class="panel">
+            <h2>1. Host Text String (Reference Table)</h2>
+            <textarea id="decodeHostInput" placeholder="Paste the exact host YouTube comment string here...">fav best are covered at: 0:12 2:36 5:44 6:58 7:49</textarea>
+        </div>
+
+        <div class="panel">
+            <h2>2. Upload Key File (.key)</h2>
+            <div class="file-dropzone" onclick="document.getElementById('keyFileInput').click()">
+                <span id="fileDropLabel">📁 Click or Drag & Drop 'comment.key' file here</span>
+                <input type="file" id="keyFileInput" accept=".key" style="display: none;" onchange="handleFileSelect(event)">
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>3. Extracted Payload</h2>
+            <div id="extractedResult" class="output-box">Waiting for key file import...</div>
         </div>
     </div>
 </div>
@@ -177,6 +265,20 @@
 <script>
     const BASE_HEX_ALPHABET = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'];
     const SEPARATOR_TOKENS = ['a','b','c','d','e','f'];
+    let loadedKeyBytes = null;
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+        if (tabName === 'encoder') {
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            document.getElementById('encoder').classList.add('active');
+        } else {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('decoder').classList.add('active');
+        }
+    }
 
     function getNextSeparator() {
         return SEPARATOR_TOKENS[Math.floor(Math.random() * SEPARATOR_TOKENS.length)];
@@ -248,13 +350,11 @@
         const hexString = generateSerializedStream();
         if (!hexString) return;
 
-        // Convert hex string pair-by-pair into a raw binary Uint8Array
         const byteArray = new Uint8Array(hexString.length / 2);
         for (let i = 0; i < hexString.length; i += 2) {
             byteArray[i / 2] = parseInt(hexString.substr(i, 2), 16);
         }
 
-        // Export as raw binary blob
         const blob = new Blob([byteArray], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -266,9 +366,93 @@
         URL.revokeObjectURL(url);
     }
 
+    // Extractor / Decoder Logic
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        document.getElementById('fileDropLabel').innerText = `📄 Loaded: ${file.name} (${file.size} bytes)`;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            loadedKeyBytes = new Uint8Array(e.target.result);
+            extractPayloadFromKey();
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function extractPayloadFromKey() {
+        const hostText = document.getElementById('decodeHostInput').value;
+        const outputDiv = document.getElementById('extractedResult');
+
+        if (!loadedKeyBytes) {
+            outputDiv.innerText = "Please select or drop a valid .key file.";
+            return;
+        }
+
+        if (!hostText) {
+            outputDiv.innerText = "Please provide the host reference text.";
+            return;
+        }
+
+        // 1. Reconstruct hex string from Uint8Array
+        let hexStream = '';
+        for (let i = 0; i < loadedKeyBytes.length; i++) {
+            hexStream += loadedKeyBytes[i].toString(16).padStart(2, '0');
+        }
+
+        // 2. Parse numbers delimited by hex tokens 'a'-'f'
+        const coordinateIndices = [];
+        let currentNum = '';
+        for (let i = 0; i < hexStream.length; i++) {
+            const char = hexStream[i];
+            if (['a','b','c','d','e','f'].includes(char)) {
+                if (currentNum.length > 0) {
+                    coordinateIndices.push(parseInt(currentNum, 10));
+                    currentNum = '';
+                }
+            } else if (['0','1','2','3','4','5','6','7','8','9'].includes(char)) {
+                currentNum += char;
+            }
+        }
+
+        // 3. Resolve indices back to host text characters
+        let hexPayloadString = '';
+        for (let idx of coordinateIndices) {
+            if (idx >= 0 && idx < hostText.length) {
+                hexPayloadString += hostText[idx].toLowerCase();
+            }
+        }
+
+        // 4. Convert hex pairs back to decoded ASCII payload
+        let decodedText = '';
+        for (let i = 0; i < hexPayloadString.length; i += 2) {
+            const hexPair = hexPayloadString.substr(i, 2);
+            if (hexPair.length === 2) {
+                decodedText += String.fromCharCode(parseInt(hexPair, 16));
+            }
+        }
+
+        outputDiv.innerText = decodedText || "[Decoding Failed: Host text mismatches key coordinates]";
+    }
+
     // Attach listeners
     document.getElementById('commentInput').addEventListener('input', updateCoverageTable);
     document.getElementById('payloadInput').addEventListener('input', updateCoverageTable);
+    document.getElementById('decodeHostInput').addEventListener('input', extractPayloadFromKey);
+
+    // Drag and Drop handlers
+    const dropzone = document.querySelector('.file-dropzone');
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#3b82f6'; });
+    dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = '#334155'; });
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#334155';
+        if (e.dataTransfer.files.length > 0) {
+            document.getElementById('keyFileInput').files = e.dataTransfer.files;
+            handleFileSelect({ target: { files: e.dataTransfer.files } });
+        }
+    });
 
     // Initial render
     updateCoverageTable();
